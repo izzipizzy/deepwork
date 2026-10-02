@@ -1,0 +1,29 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax check
+        run: |
+          node --check server.js
+          node --check lib/yt.js
+          node --check lib/db.js
+          node --check lib/cookies.js
+          node --check public/app.js
+      - name: Smoke test (server boots, API answers)
+        run: |
+          node server.js &
+          sleep 2
+          curl -sf http://127.0.0.1:8787/api/status | grep -q ytdlp
+          curl -sf "http://127.0.0.1:8787/api/search?q=test&limit=1" > /dev/null || true
+          curl -s -H 'Host: evil.example.com' http://127.0.0.1:8787/api/status | grep -q 'local only'

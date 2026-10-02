@@ -243,6 +243,11 @@ async function ensureProvider() {
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://x');
   const p = u.pathname;
+  // DNS-rebinding защита: API отвечает только локальным Host
+  const host = (req.headers.host || '').toLowerCase();
+  if (!/^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(host)) {
+    return fail(res, 403, 'local only');
+  }
   const lang = (req.headers['accept-language'] || '').toLowerCase().startsWith('ru') ? 'ru' : 'en';
   yt.setLang(lang);
   try {
