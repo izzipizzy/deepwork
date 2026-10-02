@@ -3,30 +3,31 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MONO — youtube audio</title>
+  <title>deepwork — youtube audio</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a0a0b'/%3E%3Crect x='7' y='13' width='3' height='6' fill='%23d4ff3f'/%3E%3Crect x='14.5' y='9' width='3' height='14' fill='%23d4ff3f'/%3E%3Crect x='22' y='12' width='3' height='8' fill='%23d4ff3f'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <div class="app">
     <aside class="sidebar">
-      <div class="logo">MONO<span class="logo-cursor">_</span></div>
+      <div class="logo">DEEP<span class="logo-cursor">WORK</span></div>
       <div class="logo-sub">youtube → audio</div>
       <div class="fs-controls">
-        <button id="fs-minus" class="fs-btn" title="мельче">A−</button>
-        <button id="fs-reset" class="fs-btn" title="обычный размер">A</button>
-        <button id="fs-plus" class="fs-btn" title="крупнее">A+</button>
-        <span class="fs-label">размер</span>
+        <button id="fs-minus" class="fs-btn" data-i18n-title="smaller">A−</button>
+        <button id="fs-reset" class="fs-btn" data-i18n-title="default_size">A</button>
+        <button id="fs-plus" class="fs-btn" data-i18n-title="larger">A+</button>
+        <button class="lang-btn" data-lang="ru">RU</button>
+        <button class="lang-btn" data-lang="en">EN</button>
       </div>
       <nav id="nav">
-        <a href="#/search" data-nav="search">Поиск</a>
-        <a href="#/genres" data-nav="genres">Жанры</a>
-        <a href="#/feed" data-nav="feed">Новинки</a>
-        <a href="#/subs" data-nav="subs">Подписки</a>
-        <a href="#/likes" data-nav="likes">Избранное</a>
-        <a href="#/history" data-nav="history">История</a>
+        <a href="#/search" data-nav="search" data-i18n="nav_search">Поиск</a>
+        <a href="#/genres" data-nav="genres" data-i18n="nav_genres">Жанры</a>
+        <a href="#/feed" data-nav="feed" data-i18n="nav_feed">Новинки</a>
+        <a href="#/subs" data-nav="subs" data-i18n="nav_subs">Подписки</a>
+        <a href="#/likes" data-nav="likes" data-i18n="nav_likes">Избранное</a>
+        <a href="#/history" data-nav="history" data-i18n="nav_history">История</a>
       </nav>
-      <div class="sidebar-foot">без регистрации<br>без скачивания<br>только звук</div>
+      <div class="sidebar-foot" data-i18n="foot">без регистрации<br>без скачивания<br>только звук</div>
     </aside>
 
     <main id="view" class="view"></main>
@@ -46,7 +47,7 @@
     <div class="p-center">
       <div class="p-controls">
         <button id="p-prev" class="icon-btn" title="Назад">⏮</button>
-        <button id="p-play" class="play-btn" title="Play / Pause">▶</button>
+        <button id="p-play" class="play-btn" data-i18n-title="play_pause" title="Play / Pause">▶</button>
         <button id="p-next" class="icon-btn" title="Вперёд">⏭</button>
       </div>
       <div class="p-progress">
@@ -56,8 +57,8 @@
       </div>
     </div>
     <div class="p-right">
-      <button id="p-yt" class="icon-btn" title="видимый YouTube-плеер — диагностика встраивания">⧉</button>
-      <button id="p-shuffle" class="icon-btn" title="Перемешать">⤨</button>
+      <button id="p-yt" class="icon-btn" data-i18n-title="yt_diag" title="видимый YouTube-плеер — диагностика встраивания">⧉</button>
+      <button id="p-shuffle" class="icon-btn" data-i18n-title="shuffle" title="Перемешать">⤨</button>
       <span class="vol-icon">▮▮</span>
       <input id="p-vol" type="range" min="0" max="100" value="90">
     </div>

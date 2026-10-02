@@ -5,6 +5,95 @@ const $ = (s, el = document) => el.querySelector(s);
 const view = $('#view');
 const audio = $('#audio');
 
+// ---------------------------------------------------------------- i18n
+const I18N = {
+  ru: {
+    nav_search: 'Поиск', nav_genres: 'Жанры', nav_feed: 'Новинки', nav_subs: 'Подписки', nav_likes: 'Избранное', nav_history: 'История',
+    size: 'размер', smaller: 'мельче', default_size: 'обычный размер', larger: 'крупнее',
+    foot: 'без регистрации<br>без скачивания<br>только звук',
+    q_ph: 'что играем?  например: deep house mix',
+    search_hint: 'начни вводить — я найду миксы, сеты и лейблы<br><b>Enter</b> — искать, <b>Space</b> — пауза, <b>←→</b> — перемотка',
+    searching: 'ищу «{q}»…', search_failed: 'поиск не удался: {e}', nothing_found: 'ничего не нашлось',
+    plus_channel: '+ канал', ok_channel: '✓ канал',
+    min_ago: '{n} мин назад', h_ago: '{n} ч назад', d_ago: '{n} дн назад', mo_ago: '{n} мес назад',
+    genres_h: 'Жанры', genres_sub: 'пресеты под работу и кодинг', back_genres: '← жанры',
+    gd_minimal: 'гипнотичный минимум для глубокого фокуса', gd_deep: 'мягкий грув, тёплые басы — кодится плавно',
+    gd_dub: 'глубина, эхо, дым — фоновый космос', gd_melodic: 'мелодии поверх марш-ритма',
+    gd_deeptech: 'мостик между дип-хаусом и техно', gd_focus: 'когда и техно слишком громко',
+    gd_lofi: 'на случай ночных сессий',
+    feed_h: 'Новинки', feed_sub: 'свежее с каналов и плейлистов в подписках', gathering: 'собираю ленту…',
+    empty_feed: 'подписок пока нет<br>добавь каналы в разделе <b><a href="#/subs" style="color:var(--accent)">подписки</a></b> — здесь появится всё новое',
+    subs_h: 'Подписки', subs_sub: 'каналы и плейлисты · без аккаунта, живёт локально',
+    subs_ph: '@хендл, ссылка на канал / плейлист / видео', subscribe: 'Подписаться', adding: 'добавляю…', open: 'открыть',
+    empty_subs: 'пока пусто.<br>вставь <b>@хендл</b> канала или ссылку на плейлист — например <b>@Cercle</b>',
+    list_h: 'Список', list_sub: 'видео канала / плейлиста', loading: 'загружаю…',
+    likes_h: 'Избранное', likes_sub: 'треки с ♥', empty_likes: 'пусто — жми <b>♡</b> на треке',
+    history_h: 'История', history_sub: 'что играло недавно', empty_history: 'история пуста', clear_history: 'очистить историю',
+    sub_add_toast: '+ подписка: {n}', sub_remove_toast: '− подписка: {n}', sub_exists: 'уже в подписках: {n}',
+    like_add: '+ в избранное', like_remove: '− из избранного',
+    stream_fallback: 'Стрим недоступен — включаю YouTube-плеер для этого трека',
+    track_skip: 'Этот трек сейчас не играется — листаю дальше',
+    embed_denied: 'Код {c}: YouTube не разрешает встраивание в этой среде — листаю дальше',
+    yt_error: 'YouTube-плеер: код ошибки {c} — листаю дальше',
+    browser_muted: 'Браузер держит звук выключенным — кликни в любом месте',
+    yt_stalled: 'YT плеер не стартовал (состояние {s}) — кликни в любом месте, чтобы включить звук',
+    no_ytdlp: 'yt-dlp не установлен — плеер не сможет искать и стримить. brew install yt-dlp',
+    play_pause: 'Play / Pause', shuffle: 'Перемешать', yt_diag: 'видимый YouTube-плеер — диагностика встраивания',
+  },
+  en: {
+    nav_search: 'Search', nav_genres: 'Genres', nav_feed: 'New', nav_subs: 'Subscriptions', nav_likes: 'Liked', nav_history: 'History',
+    size: 'size', smaller: 'smaller', default_size: 'default size', larger: 'larger',
+    foot: 'no account<br>no downloads<br>audio only',
+    q_ph: 'what shall we play?  e.g. deep house mix',
+    search_hint: 'start typing — mixes, sets and labels found for you<br><b>Enter</b> — search, <b>Space</b> — pause, <b>←→</b> — seek',
+    searching: 'searching “{q}”…', search_failed: 'search failed: {e}', nothing_found: 'nothing found',
+    plus_channel: '+ channel', ok_channel: '✓ channel',
+    min_ago: '{n} min ago', h_ago: '{n} h ago', d_ago: '{n} d ago', mo_ago: '{n} mo ago',
+    genres_h: 'Genres', genres_sub: 'work & coding presets', back_genres: '← genres',
+    gd_minimal: 'hypnotic minimal for deep focus', gd_deep: 'soft groove, warm bass — smooth coding',
+    gd_dub: 'depth, echo, smoke — background space', gd_melodic: 'melodies over a marching beat',
+    gd_deeptech: 'a bridge between deep house and techno', gd_focus: 'for when techno is too loud',
+    gd_lofi: 'for late-night sessions',
+    feed_h: 'New', feed_sub: 'fresh videos from your subscriptions', gathering: 'gathering the feed…',
+    empty_feed: 'no subscriptions yet<br>add channels in <b><a href="#/subs" style="color:var(--accent)">subscriptions</a></b> — new stuff lands here',
+    subs_h: 'Subscriptions', subs_sub: 'channels & playlists · no account, lives locally',
+    subs_ph: '@handle, channel / playlist / video link', subscribe: 'Subscribe', adding: 'adding…', open: 'open',
+    empty_subs: 'empty for now.<br>paste a channel <b>@handle</b> or a playlist link — e.g. <b>@Cercle</b>',
+    list_h: 'List', list_sub: 'channel / playlist videos', loading: 'loading…',
+    likes_h: 'Liked', likes_sub: 'tracks marked ♥', empty_likes: 'empty — hit <b>♡</b> on a track',
+    history_h: 'History', history_sub: 'recently played', empty_history: 'history is empty', clear_history: 'clear history',
+    sub_add_toast: '+ subscribed: {n}', sub_remove_toast: '− unsubscribed: {n}', sub_exists: 'already subscribed: {n}',
+    like_add: '+ liked', like_remove: '− unliked',
+    stream_fallback: 'Stream unavailable — switching this track to the YouTube player',
+    track_skip: 'This track can’t play right now — skipping',
+    embed_denied: 'Code {c}: YouTube disallows embedding in this environment — skipping',
+    yt_error: 'YouTube player error {c} — skipping',
+    browser_muted: 'The browser keeps sound muted — click anywhere',
+    yt_stalled: 'YT player didn’t start (state {s}) — click anywhere to enable sound',
+    no_ytdlp: 'yt-dlp not installed — search and streaming won’t work. brew install yt-dlp',
+    play_pause: 'Play / Pause', shuffle: 'Shuffle', yt_diag: 'visible YouTube player — embed diagnostics',
+  },
+};
+let lang = localStorage.getItem('mono.lang') || ((navigator.language || '').toLowerCase().startsWith('ru') ? 'ru' : 'en');
+const t = (k, vars) => {
+  let s = I18N[lang]?.[k] ?? I18N.ru[k] ?? k;
+  if (vars) for (const [key, val] of Object.entries(vars)) s = s.split(`{${key}}`).join(String(val));
+  return s;
+};
+function applyI18n() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach((el) => { el.innerHTML = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-title]').forEach((el) => { el.title = t(el.dataset.i18nTitle); });
+  document.querySelectorAll('[data-i18n-ph]').forEach((el) => { el.placeholder = t(el.dataset.i18nPh); });
+  document.querySelectorAll('.lang-btn').forEach((b) => b.classList.toggle('on', b.dataset.lang === lang));
+}
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('mono.lang', l);
+  applyI18n();
+  route();
+}
+
 // ---------------------------------------------------------------- состояние
 const state = {
   queue: [],
@@ -38,10 +127,10 @@ function fmt(s) {
 function rel(iso) {
   if (!iso) return '';
   const d = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (d < 3600) return `${Math.max(1, Math.floor(d / 60))} мин назад`;
-  if (d < 86400) return `${Math.floor(d / 3600)} ч назад`;
-  if (d < 86400 * 30) return `${Math.floor(d / 86400)} дн назад`;
-  return `${Math.floor(d / (86400 * 30))} мес назад`;
+  if (d < 3600) return t('min_ago', { n: Math.max(1, Math.floor(d / 60)) });
+  if (d < 86400) return t('h_ago', { n: Math.floor(d / 3600) });
+  if (d < 86400 * 30) return t('d_ago', { n: Math.floor(d / 86400) });
+  return t('mo_ago', { n: Math.floor(d / (86400 * 30)) });
 }
 
 function toast(msg, isErr = false) {
@@ -54,34 +143,34 @@ function toast(msg, isErr = false) {
 
 // ---------------------------------------------------------------- жанры
 const GENRES = [
-  { id: 'minimal-techno', name: 'Minimal Techno', desc: 'гипнотичный минимум для глубокого фокуса', queries: ['minimal techno mix', 'minimal deep techno set', 'microhouse minimal mix', 'hypnotic techno loop mix'] },
-  { id: 'deep-house', name: 'Deep House', desc: 'мягкий грув, тёплые басы — кодится плавно', queries: ['deep house mix', 'organic deep house mix', 'soulful deep house set', 'deep house vinyl mix'] },
-  { id: 'dub-techno', name: 'Dub Techno', desc: 'глубина, эхо, дым — фоновый космос', queries: ['dub techno mix', 'deep dub techno set', 'ambient dub techno mix'] },
-  { id: 'melodic-techno', name: 'Melodic Techno', desc: 'мелодии поверх марш-ритма', queries: ['melodic techno mix', 'melodic house & techno set', 'progressive house mix'] },
-  { id: 'deep-tech', name: 'Deep Tech', desc: 'мостик между дип-хаусом и техно', queries: ['deep tech house mix', 'deep tech minimal set'] },
-  { id: 'focus-ambient', name: 'Ambient / Focus', desc: 'когда и техно слишком громко', queries: ['deep focus ambient mix', 'ambient techno mix', 'music for coding mix'] },
-  { id: 'lofi', name: 'Lo-Fi', desc: 'на случай ночных сессий', queries: ['lofi coding beats mix', 'lofi hip hop night mix'] },
+  { id: 'minimal-techno', name: 'Minimal Techno', d: 'gd_minimal', queries: ['minimal techno mix', 'minimal deep techno set', 'microhouse minimal mix', 'hypnotic techno loop mix'] },
+  { id: 'deep-house', name: 'Deep House', d: 'gd_deep', queries: ['deep house mix', 'organic deep house mix', 'soulful deep house set', 'deep house vinyl mix'] },
+  { id: 'dub-techno', name: 'Dub Techno', d: 'gd_dub', queries: ['dub techno mix', 'deep dub techno set', 'ambient dub techno mix'] },
+  { id: 'melodic-techno', name: 'Melodic Techno', d: 'gd_melodic', queries: ['melodic techno mix', 'melodic house & techno set', 'progressive house mix'] },
+  { id: 'deep-tech', name: 'Deep Tech', d: 'gd_deeptech', queries: ['deep tech house mix', 'deep tech minimal set'] },
+  { id: 'focus-ambient', name: 'Ambient / Focus', d: 'gd_focus', queries: ['deep focus ambient mix', 'ambient techno mix', 'music for coding mix'] },
+  { id: 'lofi', name: 'Lo-Fi', d: 'gd_lofi', queries: ['lofi coding beats mix', 'lofi hip hop night mix'] },
 ];
 
 // ---------------------------------------------------------------- строки треков
 function rowsHTML(items, { channelFromTitle = '' } = {}) {
-  if (!items.length) return `<div class="empty">ничего не нашлось</div>`;
-  return `<div class="rows">${items.map((t, i) => {
-    const liked = state.likes.has(t.id);
-    const subbed = t.channelId && state.subs.has(t.channelId);
-    const chan = t.channel || channelFromTitle;
-    const sub = rel(t.published);
-    return `<div class="row" data-id="${esc(t.id)}" data-idx="${i}">
+  if (!items.length) return `<div class="empty">${t('nothing_found')}</div>`;
+  return `<div class="rows">${items.map((tr, i) => {
+    const liked = state.likes.has(tr.id);
+    const subbed = tr.channelId && state.subs.has(tr.channelId);
+    const chan = tr.channel || channelFromTitle;
+    const sub = rel(tr.published);
+    return `<div class="row" data-id="${esc(tr.id)}" data-idx="${i}">
       <span class="lead"><span class="idx">${i + 1}</span><span class="eq"><i></i><i></i><i></i></span></span>
-      <img class="thumb" loading="lazy" src="${esc(t.thumb)}" alt="">
+      <img class="thumb" loading="lazy" src="${esc(tr.thumb)}" alt="">
       <div class="meta">
-        <div class="t">${esc(t.title)}</div>
+        <div class="t">${esc(tr.title)}</div>
         <div class="c">${esc(chan)}${sub ? ` · ${esc(sub)}` : ''}</div>
       </div>
-      <span class="dur">${fmt(t.duration)}</span>
+      <span class="dur">${fmt(tr.duration)}</span>
       <span class="acts">
-        ${t.channelId ? `<button class="sub-btn ${subbed ? 'on' : ''}" data-sub="${esc(t.channelId)}" data-name="${esc(chan)}">${subbed ? '✓ канал' : '+ канал'}</button>` : ''}
-        <button class="icon-btn like-btn ${liked ? 'on' : ''}" data-like="${esc(t.id)}">${liked ? '♥' : '♡'}</button>
+        ${tr.channelId ? `<button class="sub-btn ${subbed ? 'on' : ''}" data-sub="${esc(tr.channelId)}" data-name="${esc(chan)}">${subbed ? t('ok_channel') : t('plus_channel')}</button>` : ''}
+        <button class="icon-btn like-btn ${liked ? 'on' : ''}" data-like="${esc(tr.id)}">${liked ? '♥' : '♡'}</button>
       </span>
     </div>`;
   }).join('')}</div>`;
@@ -110,15 +199,15 @@ async function toggleLike(id) {
   likePending.add(id);
   try {
     if (!state.likes.has(id)) {
-      const t = findTrack(id);
-      if (!t) return;
-      await api(`/api/likes/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ track: t }) });
-      state.likes.set(id, t);
-      toast('+ в избранное');
+      const t0 = findTrack(id);
+      if (!t0) return;
+      await api(`/api/likes/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ track: t0 }) });
+      state.likes.set(id, t0);
+      toast(t('like_add'));
     } else {
       await api(`/api/likes/${id}`, { method: 'DELETE' });
       state.likes.delete(id);
-      toast('− из избранного');
+      toast(t('like_remove'));
     }
     document.querySelectorAll(`[data-like="${CSS.escape(id)}"]`).forEach((b) => {
       const on = state.likes.has(id);
@@ -141,14 +230,14 @@ async function toggleSub(channelId, name) {
     if (state.subs.has(channelId)) {
       await api(`/api/subs/${channelId}`, { method: 'DELETE' });
       state.subs.delete(channelId);
-      toast(`− подписка: ${name || channelId}`);
+      toast(t('sub_remove_toast', { n: name || channelId }));
     } else {
       const r = await api('/api/subs', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ input: `https://www.youtube.com/channel/${channelId}` }),
       });
       state.subs.set(channelId, r.sub);
-      toast(`+ подписка: ${r.sub.title}`);
+      toast(t('sub_add_toast', { n: r.sub.title }));
     }
     document.querySelectorAll(`[data-sub="${channelId}"]`).forEach((b) => {
       const on = state.subs.has(channelId);
@@ -217,7 +306,7 @@ function playViaIframe(t, seq) {
             else { ytPlayer.mute(); ytPlayer.playVideo(); }
           },
           onStateChange: onYTState,
-          onError: (e) => onYTError(e, seq),
+          onError: (e) => onYTError(e),
         },
       });
     } else {
@@ -230,30 +319,32 @@ function playViaIframe(t, seq) {
     setTimeout(() => {
       if (engine === 'iframe' && !state.ytDebug && ytPlayer?.getPlayerState) {
         const st = ytPlayer.getPlayerState();
-        if (st !== 1 && st !== 3) toast(`YT плеер не стартовал (состояние ${st}) — кликни в любом месте, чтобы включить звук`);
+        if (st !== 1 && st !== 3) toast(t('yt_stalled', { s: st }));
       }
     }, 5000);
   });
 }
 
-function fallbackToIframe(t, seq) {
-  if (!t) return;
-  if (iframeTried.has(t.id)) {
-    toast('Этот трек сейчас не играется — листаю дальше');
+function fallbackToIframe(t0, seq) {
+  if (!t0) return;
+  if (iframeTried.has(t0.id)) {
+    toast(t('track_skip'));
     setTimeout(() => { if (seq === loadSeq) next(true); }, 800);
     return;
   }
-  toast('Стрим недоступен — включаю YouTube-плеер для этого трека');
-  playViaIframe(t, seq);
+  toast(t('stream_fallback'));
+  playViaIframe(t0, seq);
 }
 
-function onYTError(e, seq) {
+function onYTError(e) {
+  if (engine !== 'iframe') return; // ошибка от старого плеера после переключения
   console.warn('YT player error:', e?.data);
   const code = e?.data;
+  const seq = loadSeq; // актуальное поколение на момент ошибки
   if (code === 101 || code === 150 || code === 153) {
-    toast(`Код ${code}: YouTube не разрешает встраивание в этой среде — листаю дальше`);
+    toast(t('embed_denied', { c: code }));
   } else {
-    toast(`YouTube-плеер: код ошибки ${code ?? '?'} — листаю дальше`);
+    toast(t('yt_error', { c: code ?? '?' }));
   }
   setTimeout(() => { if (seq === loadSeq) next(true); }, 1200);
 }
@@ -271,7 +362,7 @@ function onYTState(e) {
       ytPlayer.unMute();
       setTimeout(() => {
         if (engine === 'iframe' && ytPlayer?.isMuted?.()) {
-          toast('Браузер держит звук выключенным — кликни в любом месте');
+          toast(t('browser_muted'));
           window.addEventListener('pointerdown', () => { try { ytPlayer.unMute(); ytPlayer.setVolume(vol.value); } catch {} }, { once: true, capture: true });
         }
       }, 1000);
@@ -306,6 +397,9 @@ async function load(t) {
   if (!t) return;
   const seq = ++loadSeq;
   state.current = t;
+  if (engine === 'iframe') { // глушим прежний iframe — иначе два источника звука
+    try { ytPlayer?.stopVideo?.(); } catch {}
+  }
   engine = 'stream'; // каждый новый трек сначала пробуем стрим (без рекламы)
   historyPending = false;
   updateBarMeta();
@@ -569,9 +663,9 @@ function shell(title, sub, body) {
 // --- поиск
 function renderSearch() {
   view.innerHTML = `
-    <div class="search-box"><input id="q" placeholder="что играем?  например: deep house mix" autofocus autocomplete="off"></div>
+    <div class="search-box"><input id="q" placeholder="${esc(t('q_ph'))}" autofocus autocomplete="off"></div>
     <div class="quick-chips">${['deep house mix', 'minimal techno mix', 'dub techno mix', 'melodic techno set'].map((q) => `<button class="chip" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>
-    <div id="results"><div class="empty">начни вводить — я найду миксы, сеты и лейблы<br><b>Enter</b> — искать, <b>Space</b> — пауза, <b>←→</b> — перемотка</div></div>`;
+    <div id="results"><div class="empty">${t('search_hint')}</div></div>`;
   const input = $('#q');
   let tmr = 0;
   const go = () => { const q = input.value.trim(); if (q) doSearch(q); };
@@ -581,26 +675,28 @@ function renderSearch() {
   input.focus();
 }
 
+let searchSeq = 0; // номер поиска на экране — защита от гонки двух запросов
 async function doSearch(q) {
   const box = $('#results');
   if (!box) return;
-  box.innerHTML = `<div class="loading">ищу «${esc(q)}»…</div>`;
+  const seq = ++searchSeq;
+  box.innerHTML = `<div class="loading">${t('searching', { q })}</div>`;
   try {
     let items = state.searchCache.get(q);
     if (!items) { items = await api(`/api/search?q=${encodeURIComponent(q)}&limit=30`); state.searchCache.set(q, items); }
-    if (!box.isConnected) return; // экран сменился, пока ждали ответ
+    if (!box.isConnected || seq !== searchSeq) return; // экран сменился или пришёл более новый запрос
     state.viewItems = items;
     box.innerHTML = rowsHTML(items);
     markPlaying();
-  } catch (e) { box.innerHTML = `<div class="error-box">поиск не удался: ${esc(e.message)}</div>`; }
+  } catch (e) { if (box.isConnected && seq === searchSeq) box.innerHTML = `<div class="error-box">${t('search_failed', { e: esc(e.message) })}</div>`; }
 }
 
 // --- жанры
 function renderGenres() {
-  shell('Жанры', 'пресеты под работу и кодинг', `<div class="genre-grid">${GENRES.map((g) => `
+  shell(t('genres_h'), t('genres_sub'), `<div class="genre-grid">${GENRES.map((g) => `
     <div class="genre-card" data-g="${g.id}">
       <div class="g-name">${esc(g.name)}</div>
-      <div class="g-desc">${esc(g.desc)}</div>
+      <div class="g-desc">${esc(t(g.d))}</div>
     </div>`).join('')}</div>`);
   view.querySelectorAll('[data-g]').forEach((c) => c.onclick = () => { location.hash = `#/genre/${c.dataset.g}`; });
 }
@@ -609,8 +705,8 @@ function renderGenre(id) {
   const g = GENRES.find((x) => x.id === id);
   if (!g) { location.hash = '#/genres'; return; }
   view.innerHTML = `
-    <a class="back-link" href="#/genres">← жанры</a>
-    <h1>${esc(g.name)}</h1><div class="h-sub">${esc(g.desc)}</div>
+    <a class="back-link" href="#/genres">${t('back_genres')}</a>
+    <h1>${esc(g.name)}</h1><div class="h-sub">${esc(t(g.d))}</div>
     <div class="quick-chips">${g.queries.map((q, i) => `<button class="chip ${i === 0 ? 'on' : ''}" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>
     <div id="results"><div class="loading">ищу…</div></div>`;
   const run = async (q) => {
@@ -624,13 +720,13 @@ function renderGenre(id) {
 // --- лента
 async function renderFeed() {
   const gen = routeGen;
-  shell('Новинки', 'свежее с каналов и плейлистов в подписках', `<div id="results"><div class="loading">собираю ленту…</div></div>`);
+  shell(t('feed_h'), t('feed_sub'), `<div id="results"><div class="loading">${t('gathering')}</div></div>`);
   try {
     const items = await api('/api/feed');
     if (gen !== routeGen) return;
     state.viewItems = items;
     if (!items.length) {
-      $('#results').innerHTML = `<div class="empty">подписок пока нет<br>добавь каналы в разделе <b><a href="#/subs" style="color:var(--accent)">подписки</a></b> — здесь появится всё новое</div>`;
+      $('#results').innerHTML = `<div class="empty">${t('empty_feed')}</div>`;
       return;
     }
     $('#results').innerHTML = rowsHTML(items);
@@ -640,12 +736,12 @@ async function renderFeed() {
 
 // --- подписки
 async function renderSubs() {
-  shell('Подписки', 'каналы и плейлисты · без аккаунта, живёт локально', `
+  shell(t('subs_h'), t('subs_sub'), `
     <div class="add-form">
-      <input id="sub-in" placeholder="@хендл, ссылка на канал / плейлист / видео" autocomplete="off">
-      <button id="sub-add">Подписаться</button>
+      <input id="sub-in" placeholder="${esc(t('subs_ph'))}" autocomplete="off">
+      <button id="sub-add">${t('subscribe')}</button>
     </div>
-    <div class="subs-list" id="subs-list"><div class="loading">загрузка…</div></div>`);
+    <div class="subs-list" id="subs-list"><div class="loading">${t('loading')}</div></div>`);
   const list = $('#subs-list');
   const draw = async () => {
     const subs = await api('/api/subs');
@@ -653,11 +749,11 @@ async function renderSubs() {
     subs.forEach((s) => state.subs.set(s.id, s));
     list.innerHTML = subs.length ? subs.map((s) => `
       <div class="sub-item">
-        <span class="s-type">${s.type === 'playlist' ? 'плейлист' : 'канал'}</span>
+        <span class="s-type">${s.type === 'playlist' ? (lang === 'ru' ? 'плейлист' : 'playlist') : (lang === 'ru' ? 'канал' : 'channel')}</span>
         <span class="s-title">${esc(s.title)}</span>
-        <button class="s-open" data-open="${esc(s.url)}" data-title="${esc(s.title)}">открыть</button>
-        <button class="s-del" data-del="${esc(s.id)}" title="отписаться">✕</button>
-      </div>`).join('') : `<div class="empty">пока пусто.<br>вставь <b>@хендл</b> канала или ссылку на плейлист — например <b>@Cercle</b></div>`;
+        <button class="s-open" data-open="${esc(s.url)}" data-title="${esc(s.title)}">${t('open')}</button>
+        <button class="s-del" data-del="${esc(s.id)}" title="${lang === 'ru' ? 'отписаться' : 'unsubscribe'}">✕</button>
+      </div>`).join('') : `<div class="empty">${t('empty_subs')}</div>`;
     list.querySelectorAll('[data-open]').forEach((b) => b.onclick = () => {
       location.hash = `#/browse?url=${encodeURIComponent(b.dataset.open)}&title=${encodeURIComponent(b.dataset.title)}`;
     });
@@ -672,14 +768,14 @@ async function renderSubs() {
     const v = input.value.trim();
     if (!v) return;
     const btn = $('#sub-add');
-    btn.disabled = true; btn.textContent = 'добавляю…';
+    btn.disabled = true; btn.textContent = t('adding');
     try {
       const r = await api('/api/subs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ input: v }) });
-      toast(r.existed ? `уже в подписках: ${r.sub.title}` : `+ подписка: ${r.sub.title}`);
+      toast(r.existed ? t('sub_exists', { n: r.sub.title }) : t('sub_add_toast', { n: r.sub.title }));
       input.value = '';
       await draw();
     } catch (e) { toast(e.message, true); }
-    btn.disabled = false; btn.textContent = 'Подписаться';
+    btn.disabled = false; btn.textContent = t('subscribe');
     input.focus();
   };
   $('#sub-add').onclick = add;
@@ -690,7 +786,7 @@ async function renderSubs() {
 // --- просмотр канала/плейлиста
 async function renderBrowse(url, title) {
   const gen = routeGen;
-  shell(title || 'Список', 'видео канала / плейлиста', `<div id="results"><div class="loading">загружаю…</div></div>`);
+  shell(title || t('list_h'), t('list_sub'), `<div id="results"><div class="loading">${t('loading')}</div></div>`);
   try {
     const items = await api(`/api/browse?url=${encodeURIComponent(url)}&limit=60`);
     if (gen !== routeGen) return;
@@ -703,23 +799,23 @@ async function renderBrowse(url, title) {
 // --- избранное / история
 async function renderLikes() {
   const gen = routeGen;
-  shell('Избранное', 'треки с ♥', `<div id="results"><div class="loading">загрузка…</div></div>`);
+  shell(t('likes_h'), t('likes_sub'), `<div id="results"><div class="loading">${t('loading')}</div></div>`);
   const items = await api('/api/likes');
   if (gen !== routeGen) return;
   state.viewItems = items;
-  $('#results').innerHTML = items.length ? rowsHTML(items) : `<div class="empty">пусто — жми <b>♡</b> на треке</div>`;
+  $('#results').innerHTML = items.length ? rowsHTML(items) : `<div class="empty">${t('empty_likes')}</div>`;
   markPlaying();
 }
 
 async function renderHistory() {
   const gen = routeGen;
-  shell('История', 'что играло недавно', `
-    <div id="results"><div class="loading">загрузка…</div></div>
-    <button class="danger-link" id="hist-clear">очистить историю</button>`);
+  shell(t('history_h'), t('history_sub'), `
+    <div id="results"><div class="loading">${t('loading')}</div></div>
+    <button class="danger-link" id="hist-clear">${t('clear_history')}</button>`);
   const items = await api('/api/history');
   if (gen !== routeGen) return;
   state.viewItems = items;
-  $('#results').innerHTML = items.length ? rowsHTML(items) : `<div class="empty">история пуста</div>`;
+  $('#results').innerHTML = items.length ? rowsHTML(items) : `<div class="empty">${t('empty_history')}</div>`;
   markPlaying();
   $('#hist-clear').onclick = async () => { await api('/api/history', { method: 'DELETE' }); route(); };
 }
@@ -759,11 +855,13 @@ window.addEventListener('hashchange', route);
 (async function init() {
   state.shuffle = !!localStorage.getItem('mono.shuffle');
   $('#p-shuffle').classList.toggle('on', state.shuffle);
+  applyI18n();
+  document.querySelectorAll('.lang-btn').forEach((b) => b.onclick = () => setLang(b.dataset.lang));
   try {
     const [likes, subs, status] = await Promise.all([api('/api/likes'), api('/api/subs'), api('/api/status')]);
     likes.forEach((t) => state.likes.set(t.id, t));
     subs.forEach((s) => state.subs.set(s.id, s));
-    if (!status.ytdlp) toast('yt-dlp не установлен — плеер не сможет искать и стримить. brew install yt-dlp', true);
+    if (!status.ytdlp) toast(t('no_ytdlp'), true);
   } catch {}
   route();
 })();

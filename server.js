@@ -1,4 +1,4 @@
-// MONO — локальный аудио-плеер для YouTube. Ноль npm-зависимостей.
+// deepwork — локальный аудио-плеер для YouTube. Ноль npm-зависимостей.
 // Запуск: node server.js  →  http://localhost:8787
 import http from 'node:http';
 import fs from 'node:fs';
@@ -80,10 +80,10 @@ async function makeSub(input) {
   if (det.type === 'playlist') {
     const id = det.id;
     if (!/^(PL|UU|OL|FL|RD)[A-Za-z0-9_-]{10,}$/.test(id)) {
-      throw new Error(`«${id}» не похож на ID плейлиста YouTube`);
+      throw new Error(lang === 'ru' ? `«${id}» не похоже на ID плейлиста YouTube` : `“${id}” doesn’t look like a YouTube playlist ID`);
     }
     const url = `https://www.youtube.com/playlist?list=${id}`;
-    let title = `Плейлист ${id.slice(0, 12)}…`;
+    let title = lang === 'ru' ? `Плейлист ${id.slice(0, 12)}…` : `Playlist ${id.slice(0, 12)}…`;
     try { title = (await yt.meta(url, 1)).title || title; } catch {}
     return { type: 'playlist', id, title, url, addedAt: Date.now() };
   }
@@ -92,9 +92,9 @@ async function makeSub(input) {
   const vid = det.ref?.match(/(?:watch\?v=|youtu\.be\/|shorts\/)([A-Za-z0-9_-]{11})/);
   if (vid) {
     const { track } = await yt.resolve(vid[1]);
-    if (!track.channelId) throw new Error('Не нашёл канал у этого видео');
+    if (!track.channelId) throw new Error(lang === 'ru' ? 'Не нашёл канал у этого видео' : 'No channel found for this video');
     return {
-      type: 'channel', id: track.channelId, title: track.channel || 'Канал',
+      type: 'channel', id: track.channelId, title: track.channel || (lang === 'ru' ? 'Канал' : 'Channel'),
       url: `https://www.youtube.com/channel/${track.channelId}/videos`, addedAt: Date.now(),
     };
   }
@@ -106,7 +106,7 @@ async function makeSub(input) {
   } else if (/^https?:\/\//.test(det.ref)) {
     const u = new URL(det.ref);
     if (!/(^|\.)youtube\.com$/.test(u.hostname) && u.hostname !== 'youtu.be') {
-      throw new Error('Поддерживаются только ссылки YouTube');
+      throw new Error(lang === 'ru' ? 'Поддерживаются только ссылки YouTube' : 'YouTube links only');
     }
     browseUrl = u.origin + u.pathname.replace(/\/$/, '') + '/videos';
   } else {
@@ -116,7 +116,7 @@ async function makeSub(input) {
 
   const meta = await yt.meta(browseUrl, 1);
   const id = det.id || meta.channelId;
-  if (!id || !id.startsWith('UC')) throw new Error('Не нашёл канал — попробуй @хендл или ссылку на канал');
+  if (!id || !id.startsWith('UC')) throw new Error(lang === 'ru' ? 'Не нашёл канал — попробуй @хендл или ссылку на канал' : 'Channel not found — try an @handle or a channel link');
   const title = meta.channel || meta.title || `Канал ${id.slice(0, 12)}…`;
   return { type: 'channel', id, title, url: browseUrl, addedAt: Date.now() };
 }
@@ -243,6 +243,8 @@ async function ensureProvider() {
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://x');
   const p = u.pathname;
+  const lang = (req.headers['accept-language'] || '').toLowerCase().startsWith('ru') ? 'ru' : 'en';
+  yt.setLang(lang);
   try {
     // --- поиск
     if (p === '/api/search') {
@@ -257,7 +259,7 @@ const server = http.createServer(async (req, res) => {
       const url = u.searchParams.get('url') || '';
       let host = 'www.youtube.com';
       try { host = new URL(url).hostname; } catch { return fail(res, 400, 'bad url'); }
-      if (!/(^|\.)youtube\.com$/.test(host) && host !== 'youtu.be') return fail(res, 400, 'только YouTube');
+      if (!/(^|\.)youtube\.com$/.test(host) && host !== 'youtu.be') return fail(res, 400, lang === 'ru' ? 'только YouTube' : 'YouTube links only');
       return json(res, 200, await yt.listFlat(url, Math.min(Math.max(1, Math.floor(Number(u.searchParams.get('limit'))) || 60), 100)));
     }
 
@@ -276,7 +278,7 @@ const server = http.createServer(async (req, res) => {
     if (p === '/api/subs' && req.method === 'GET') return json(res, 200, db.listSubs());
     if (p === '/api/subs' && req.method === 'POST') {
       const { input } = await readBody(req);
-      if (!input) return fail(res, 400, 'пустой ввод');
+      if (!input) return fail(res, 400, lang === 'ru' ? 'пустой ввод' : 'empty input');
       const sub = await makeSub(input);
       const existed = db.hasSub(sub.id);
       db.addSub(sub);
@@ -352,7 +354,7 @@ const server = http.createServer(async (req, res) => {
 
 // только loopback: API управляет yt-dlp и локальной БД — наружу его нельзя
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`\n  MONO ── http://localhost:${PORT}\n`);
+  console.log(`\n  deepwork ── http://localhost:${PORT}\n`);
   yt.version().then((v) => {
     console.log(v ? `  yt-dlp: ${v}` : '  ⚠ yt-dlp не найден! Установи: brew install yt-dlp');
   });

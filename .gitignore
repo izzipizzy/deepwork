@@ -1,4 +1,7 @@
 node_modules/
 data/
 .DS_Store
+.env*
+*.log
 cookies.txt
+cookies.*.txt

@@ -1,14 +1,14 @@
 {
-  "name": "mono-player",
-  "version": "0.1.0",
-  "description": "MONO — локальный аудио-плеер для YouTube: без регистрации, подписки на каналы и плейлисты, поиск по жанрам. Играет только звуковую дорожку.",
+  "name": "deepwork",
+  "version": "0.2.0",
+  "description": "deepwork — локальный аудио-плеер для YouTube: стрим только звука без скачивания, подписки без регистрации, фолбэк через официальный IFrame-плеер. Deep house для deep work.",
   "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22.5"
   },
   "license": "MIT"
 }
