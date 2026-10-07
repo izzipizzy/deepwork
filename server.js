@@ -211,7 +211,10 @@ function staticFile(res, rel) {
   if (!file.startsWith(PUBLIC)) return fail(res, 403, 'forbidden');
   fs.readFile(file, (e, buf) => {
     if (e) { res.writeHead(404); return res.end('not found'); }
-    res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream' });
+    res.writeHead(200, {
+      'Content-Type': MIME[path.extname(file)] || 'application/octet-stream',
+      'Cache-Control': 'no-cache', // локальный сервер — всегда свежий код
+    });
     res.end(buf);
   });
 }
