@@ -45,7 +45,7 @@ img { display: block; }
 
 .sidebar {
   border-right: 1px solid var(--border);
-  padding: 24px 0 20px;
+  padding: 24px 0 calc(var(--player-h) + var(--viz-h) + 12px);
   display: flex;
   flex-direction: column;
   background: var(--panel);
@@ -147,6 +147,20 @@ h1 {
 
 .feed-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
 .list-sentinel { height: 1px; }
+
+/* ------------------------------------------------ крупные масштабы / узкие окна */
+.fs-controls { flex-wrap: wrap; }
+@media (max-width: 1150px) {
+  .player { grid-template-columns: minmax(140px, 1fr) minmax(260px, 2fr) auto; }
+  .view { padding-left: 22px; padding-right: 22px; }
+  #p-vol { width: 64px; }
+  .p-progress { max-width: none; }
+}
+@media (max-width: 880px) {
+  .p-right .vol-icon, #p-vol { display: none; }
+  .player { grid-template-columns: auto 1fr auto; gap: 10px; }
+  .p-left { max-width: 46vw; }
+}
 
 .loading {
   font-family: var(--mono);
@@ -473,7 +487,7 @@ input[type="range"]:hover::-webkit-slider-thumb { opacity: 1; }
 }
 #yt-holder iframe { width: 1px; height: 1px; border: 0; }
 
-/* отладка: видимый YouTube-плеер */
+/* отладка: видимый YouTube-плеер (пустой контейнер невидим и не мешает) */
 #yt-holder.debug {
   left: auto;
   right: 16px;
@@ -481,12 +495,17 @@ input[type="range"]:hover::-webkit-slider-thumb { opacity: 1; }
   width: 480px;
   height: 288px;
   opacity: 1;
-  pointer-events: auto;
   overflow: visible;
   z-index: 60;
+  background: transparent;
+  border: none;
+  pointer-events: none;
+}
+#yt-holder.debug.has-player {
   background: #000;
   border: 1px solid var(--border);
   border-radius: 6px;
+  pointer-events: auto;
 }
 #yt-holder.debug iframe { width: 480px !important; height: 288px !important; }
 

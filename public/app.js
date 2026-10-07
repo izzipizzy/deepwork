@@ -300,6 +300,8 @@ function playViaIframe(t, seq) {
     };
     if (!dbg) playerVars.mute = 1; // mute-автоплей разрешён всегда; звук включаем после старта
     if (!ytPlayer) {
+      ensureYtDiv();
+      $('#yt-holder').classList.add('has-player');
       ytPlayer = new YT.Player('yt-player', {
         height: dbg ? '270' : '1',
         width: dbg ? '480' : '1',
@@ -495,7 +497,7 @@ $('#p-yt').onclick = () => {
   localStorage.setItem('mono.ytdebug', state.ytDebug ? '1' : '0');
   $('#p-yt').classList.toggle('on', state.ytDebug);
   $('#yt-holder').classList.toggle('debug', state.ytDebug);
-  if (ytPlayer) { try { ytPlayer.destroy(); } catch {} ytPlayer = null; }
+  if (ytPlayer) { try { ytPlayer.destroy(); } catch {} ytPlayer = null; $('#yt-holder').classList.remove('has-player'); }
   if (state.current) load(state.current);
 };
 $('#p-yt').classList.toggle('on', state.ytDebug);
@@ -695,15 +697,15 @@ function renderSearch() {
 }
 
 let searchSeq = 0; // номер поиска на экране — защита от гонки двух запросов
-function attachSentinel(box, onLoadMore) {
-  const s = document.createElement('div');
-  s.className = 'list-sentinel';
-  box.appendChild(s);
-  const io = new IntersectionObserver((ents) => {
-    if (ents.some((x) => x.isIntersecting)) { io.disconnect(); onLoadMore(); }
-  }, { root: view, rootMargin: '400px 0px' });
-  io.observe(s);
-}
+let moreLoader = null; // дозагрузка текущего списка при скролле до низа
+view.addEventListener('scroll', () => {
+  if (!moreLoader) return;
+  if (view.scrollTop + view.clientHeight >= view.scrollHeight - 420) {
+    const f = moreLoader;
+    moreLoader = null;
+    f();
+  }
+});
 async function doSearch(q, { start = 1, append = false } = {}) {
   const box = $('#results');
   if (!box) return;
@@ -716,7 +718,15 @@ async function doSearch(q, { start = 1, append = false } = {}) {
     state.viewItems = append ? [...state.viewItems, ...items] : items;
     box.innerHTML = rowsHTML(state.viewItems);
     markPlaying();
-    if (items.length >= 30) attachSentinel(box, () => doSearch(q, { start: start + 30, append: true }));
+    if (items.length >= 30) {
+      moreLoader = () => doSearch(q, { start: start + 30, append: true });
+      const btn = document.createElement('button');
+      btn.className = 'chip';
+      btn.style.margin = '16px 0';
+      btn.textContent = t('more');
+      btn.onclick = () => { btn.remove(); if (moreLoader) { const f = moreLoader; moreLoader = null; f(); } };
+      box.appendChild(btn);
+    } else moreLoader = null;
   } catch (e) { if (box.isConnected && seq === searchSeq) box.innerHTML = `<div class="error-box">${t('search_failed', { e: esc(e.message) })}</div>`; }
 }
 
@@ -850,7 +860,15 @@ async function renderBrowse(url, title) {
     state.viewItems = append ? [...state.viewItems, ...items] : items;
     $('#results').innerHTML = rowsHTML(state.viewItems, { channelFromTitle: title });
     markPlaying();
-    if (items.length >= 60) attachSentinel($('#results'), () => { start += 60; loadMore(true); });
+    if (items.length >= 60) {
+      moreLoader = () => { start += 60; loadMore(true); };
+      const btn = document.createElement('button');
+      btn.className = 'chip';
+      btn.style.margin = '16px 0';
+      btn.textContent = t('more');
+      btn.onclick = () => { btn.remove(); if (moreLoader) { const f = moreLoader; moreLoader = null; f(); } };
+      $('#results').appendChild(btn);
+    } else moreLoader = null;
   };
   try {
     await loadMore(false);
@@ -892,6 +910,7 @@ let routeGen = 0; // поколение роута — защита от пер�
 
 async function route() {
   const gen = ++routeGen;
+  moreLoader = null; // смена экрана — сброс дозагрузки
   const h = location.hash.replace(/^#\/?/, '') || 'search';
   const [pathPart, qs] = h.split('?');
   const params = new URLSearchParams(qs || '');
