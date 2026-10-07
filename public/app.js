@@ -695,6 +695,15 @@ function renderSearch() {
 }
 
 let searchSeq = 0; // номер поиска на экране — защита от гонки двух запросов
+function attachSentinel(box, onLoadMore) {
+  const s = document.createElement('div');
+  s.className = 'list-sentinel';
+  box.appendChild(s);
+  const io = new IntersectionObserver((ents) => {
+    if (ents.some((x) => x.isIntersecting)) { io.disconnect(); onLoadMore(); }
+  }, { root: view, rootMargin: '400px 0px' });
+  io.observe(s);
+}
 async function doSearch(q, { start = 1, append = false } = {}) {
   const box = $('#results');
   if (!box) return;
@@ -707,14 +716,7 @@ async function doSearch(q, { start = 1, append = false } = {}) {
     state.viewItems = append ? [...state.viewItems, ...items] : items;
     box.innerHTML = rowsHTML(state.viewItems);
     markPlaying();
-    if (items.length >= 30) {
-      const btn = document.createElement('button');
-      btn.className = 'chip';
-      btn.style.margin = '16px 0';
-      btn.textContent = t('more');
-      btn.onclick = () => { btn.remove(); doSearch(q, { start: start + 30, append: true }); };
-      box.appendChild(btn);
-    }
+    if (items.length >= 30) attachSentinel(box, () => doSearch(q, { start: start + 30, append: true }));
   } catch (e) { if (box.isConnected && seq === searchSeq) box.innerHTML = `<div class="error-box">${t('search_failed', { e: esc(e.message) })}</div>`; }
 }
 
@@ -848,14 +850,7 @@ async function renderBrowse(url, title) {
     state.viewItems = append ? [...state.viewItems, ...items] : items;
     $('#results').innerHTML = rowsHTML(state.viewItems, { channelFromTitle: title });
     markPlaying();
-    if (items.length >= 60) {
-      const btn = document.createElement('button');
-      btn.className = 'chip';
-      btn.style.margin = '16px 0';
-      btn.textContent = t('more');
-      btn.onclick = () => { btn.remove(); start += 60; loadMore(true); };
-      $('#results').appendChild(btn);
-    }
+    if (items.length >= 60) attachSentinel($('#results'), () => { start += 60; loadMore(true); });
   };
   try {
     await loadMore(false);
