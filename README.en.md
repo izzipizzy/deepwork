@@ -29,6 +29,8 @@ the language follows your browser automatically (RU/EN toggle in the sidebar).
 - **New releases** — aggregated RSS feed of your subscriptions
 - **Player**: queue from any list, seeking (Range proxy), shuffle, media keys, visualizer,
   UI scaling (A−/A+), likes and history
+- **🎧 Mix** — a random queue of unplayed tracks across all subscriptions, one click
+- **“Hide played”** toggle in the feed — always something fresh
 - **Keyboard**: `Space` — pause, `←/→` — ±10 s, `N/P` — prev/next track
 
 ## Privacy

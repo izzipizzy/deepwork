@@ -297,6 +297,24 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { ok: true });
     }
 
+    // --- случайный микс из подписок (можно исключать прослушанное)
+    if (p === '/api/mix') {
+      const currentSubs = db.listSubs();
+      if (!currentSubs.length) {
+        return fail(res, 400, lang === 'ru' ? 'сначала добавь подписки — микс собирается из них' : 'add subscriptions first — the mix is built from them');
+      }
+      const count = Math.min(Math.max(5, Math.floor(Number(u.searchParams.get('count'))) || 30), 60);
+      const played = new Set(u.searchParams.get('unplayed') === '1' ? db.listHistory(500).map((h) => h.id) : []);
+      const parts = await Promise.allSettled(currentSubs.map((s) => yt.meta(s.url, 12)));
+      const pool = parts.flatMap((r) => (r.status === 'fulfilled' ? r.value.entries : []))
+        .filter((t) => !(u.searchParams.get('unplayed') === '1' && played.has(t.id)));
+      for (let i = pool.length - 1; i > 0; i--) { // Фишер—Йетс
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      return json(res, 200, pool.slice(0, count));
+    }
+
     // --- лента новинок из подписок
     if (p === '/api/feed') {
       if (!db.listSubs().length) return json(res, 200, []);

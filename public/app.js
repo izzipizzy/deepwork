@@ -12,6 +12,8 @@ const I18N = {
     size: 'размер', smaller: 'мельче', default_size: 'обычный размер', larger: 'крупнее',
     foot: 'без регистрации<br>без скачивания<br>только звук',
     q_ph: 'что играем?  например: deep house mix',
+    make_mix: 'собрать микс', mix_queued: 'в очереди: {n}', mix_need_subs: 'сначала добавь подписки — микс собирается из них',
+    hide_played: 'скрыть прослушанное',
     search_hint: 'начни вводить — я найду миксы, сеты и лейблы<br><b>Enter</b> — искать, <b>Space</b> — пауза, <b>←→</b> — перемотка',
     searching: 'ищу «{q}»…', search_failed: 'поиск не удался: {e}', nothing_found: 'ничего не нашлось',
     plus_channel: '+ канал', ok_channel: '✓ канал',
@@ -45,6 +47,8 @@ const I18N = {
     size: 'size', smaller: 'smaller', default_size: 'default size', larger: 'larger',
     foot: 'no account<br>no downloads<br>audio only',
     q_ph: 'what shall we play?  e.g. deep house mix',
+    make_mix: 'build a mix', mix_queued: 'queued: {n}', mix_need_subs: 'add subscriptions first — the mix is built from them',
+    hide_played: 'hide played',
     search_hint: 'start typing — mixes, sets and labels found for you<br><b>Enter</b> — search, <b>Space</b> — pause, <b>←→</b> — seek',
     searching: 'searching “{q}”…', search_failed: 'search failed: {e}', nothing_found: 'nothing found',
     plus_channel: '+ channel', ok_channel: '✓ channel',
@@ -105,6 +109,8 @@ const state = {
   subs: new Map(),     // channel/playlist id -> sub
   viewItems: [],       // треки текущего списка (для кликов)
   searchCache: new Map(),
+  playedIds: new Set(), // что уже звучало — для «скрыть прослушанное» и микса
+  hidePlayed: localStorage.getItem('mono.hidePlayed') === '1',
 };
 
 // ---------------------------------------------------------------- утилиты
@@ -369,6 +375,7 @@ function onYTState(e) {
     }
     if (!historyPending && state.current) {
       historyPending = true;
+      state.playedIds.add(state.current.id);
       api('/api/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ track: state.current }) }).catch(() => {});
     }
   } else if (e.data === S.ENDED) {
@@ -436,17 +443,28 @@ function togglePlay() {
   else audio.pause();
 }
 
+const recentIds = []; // чтобы shuffle не заводил одно и то же
+function pickShuffled() {
+  for (let tries = 0; tries < 15; tries++) {
+    const i = Math.floor(Math.random() * state.queue.length);
+    if (!recentIds.includes(state.queue[i]?.id) || tries === 14) return i;
+  }
+  return Math.floor(Math.random() * state.queue.length);
+}
+
 function next(auto = false) {
   if (!state.queue.length) return;
   let i;
   if (state.shuffle && state.queue.length > 1) {
-    do { i = Math.floor(Math.random() * state.queue.length); } while (i === state.index);
+    i = pickShuffled();
   } else {
     i = state.index + 1;
     if (i >= state.queue.length) i = auto ? 0 : state.index; // по кругу — для рабочих сессий
   }
   if (i === state.index && !auto) return;
   state.index = i;
+  recentIds.push(state.queue[i]?.id);
+  if (recentIds.length > 8) recentIds.shift();
   load(state.queue[i]);
 }
 
@@ -512,6 +530,7 @@ audio.addEventListener('play', () => {
   startViz();
   if (state.current && !historyPending) {
     historyPending = true;
+    state.playedIds.add(state.current.id);
     api('/api/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ track: state.current }) }).catch(() => {});
   }
 });
@@ -720,18 +739,45 @@ function renderGenre(id) {
 // --- лента
 async function renderFeed() {
   const gen = routeGen;
-  shell(t('feed_h'), t('feed_sub'), `<div id="results"><div class="loading">${t('gathering')}</div></div>`);
+  shell(t('feed_h'), t('feed_sub'), `
+    <div class="feed-controls">
+      <button class="btn" id="mix-btn">🎧 ${t('make_mix')}</button>
+      <button class="chip ${state.hidePlayed ? 'on' : ''}" id="hide-played">${t('hide_played')}</button>
+    </div>
+    <div id="results"><div class="loading">${t('gathering')}</div></div>`);
   try {
     const items = await api('/api/feed');
     if (gen !== routeGen) return;
     state.viewItems = items;
-    if (!items.length) {
-      $('#results').innerHTML = `<div class="empty">${t('empty_feed')}</div>`;
-      return;
-    }
-    $('#results').innerHTML = rowsHTML(items);
-    markPlaying();
+    const draw = () => {
+      const list = state.hidePlayed ? items.filter((x) => !state.playedIds.has(x.id)) : items;
+      $('#results').innerHTML = list.length ? rowsHTML(list) : `<div class="empty">${t('nothing_found')}</div>`;
+      state.viewItems = list;
+      markPlaying();
+    };
+    draw();
+    $('#hide-played').onclick = () => {
+      state.hidePlayed = !state.hidePlayed;
+      localStorage.setItem('mono.hidePlayed', state.hidePlayed ? '1' : '');
+      $('#hide-played').classList.toggle('on', state.hidePlayed);
+      draw();
+    };
+    $('#mix-btn').onclick = mixNow;
   } catch (e) { if (gen === routeGen) $('#results').innerHTML = `<div class="error-box">${esc(e.message)}</div>`; }
+}
+
+// ---------------------------------------------------------------- микс из подписок
+async function mixNow() {
+  const btn = $('#mix-btn');
+  if (btn) { btn.disabled = true; btn.textContent = `🎧 ${t('loading')}`; }
+  try {
+    const items = await api('/api/mix?unplayed=1&count=30');
+    if (!items.length) { toast(t('nothing_found'), true); return; }
+    state.viewItems = items;
+    playList(items, 0);
+    toast(t('mix_queued', { n: items.length }));
+  } catch (e) { toast(e.message, true); }
+  if (btn) { btn.disabled = false; btn.textContent = `🎧 ${t('make_mix')}`; }
 }
 
 // --- подписки
@@ -858,9 +904,10 @@ window.addEventListener('hashchange', route);
   applyI18n();
   document.querySelectorAll('.lang-btn').forEach((b) => b.onclick = () => setLang(b.dataset.lang));
   try {
-    const [likes, subs, status] = await Promise.all([api('/api/likes'), api('/api/subs'), api('/api/status')]);
-    likes.forEach((t) => state.likes.set(t.id, t));
+    const [likes, subs, status, history] = await Promise.all([api('/api/likes'), api('/api/subs'), api('/api/status'), api('/api/history')]);
+    likes.forEach((t0) => state.likes.set(t0.id, t0));
     subs.forEach((s) => state.subs.set(s.id, s));
+    history.forEach((h) => state.playedIds.add(h.id));
     if (!status.ytdlp) toast(t('no_ytdlp'), true);
   } catch {}
   route();

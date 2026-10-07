@@ -145,6 +145,8 @@ h1 {
 }
 .empty b { color: var(--muted); font-weight: 500; }
 
+.feed-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+
 .loading {
   font-family: var(--mono);
   font-size: 12px;
