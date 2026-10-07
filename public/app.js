@@ -13,7 +13,7 @@ const I18N = {
     foot: 'без регистрации<br>без скачивания<br>только звук',
     q_ph: 'что играем?  например: deep house mix',
     make_mix: 'собрать микс', mix_queued: 'в очереди: {n}', mix_need_subs: 'сначала добавь подписки — микс собирается из них',
-    hide_played: 'скрыть прослушанное',
+    hide_played: 'скрыть прослушанное', more: 'показать ещё',
     search_hint: 'начни вводить — я найду миксы, сеты и лейблы<br><b>Enter</b> — искать, <b>Space</b> — пауза, <b>←→</b> — перемотка',
     searching: 'ищу «{q}»…', search_failed: 'поиск не удался: {e}', nothing_found: 'ничего не нашлось',
     plus_channel: '+ канал', ok_channel: '✓ канал',
@@ -48,7 +48,7 @@ const I18N = {
     foot: 'no account<br>no downloads<br>audio only',
     q_ph: 'what shall we play?  e.g. deep house mix',
     make_mix: 'build a mix', mix_queued: 'queued: {n}', mix_need_subs: 'add subscriptions first — the mix is built from them',
-    hide_played: 'hide played',
+    hide_played: 'hide played', more: 'show more',
     search_hint: 'start typing — mixes, sets and labels found for you<br><b>Enter</b> — search, <b>Space</b> — pause, <b>←→</b> — seek',
     searching: 'searching “{q}”…', search_failed: 'search failed: {e}', nothing_found: 'nothing found',
     plus_channel: '+ channel', ok_channel: '✓ channel',
@@ -695,18 +695,26 @@ function renderSearch() {
 }
 
 let searchSeq = 0; // номер поиска на экране — защита от гонки двух запросов
-async function doSearch(q) {
+async function doSearch(q, { start = 1, append = false } = {}) {
   const box = $('#results');
   if (!box) return;
   const seq = ++searchSeq;
-  box.innerHTML = `<div class="loading">${t('searching', { q })}</div>`;
+  if (!append) box.innerHTML = `<div class="loading">${t('searching', { q })}</div>`;
   try {
-    let items = state.searchCache.get(q);
-    if (!items) { items = await api(`/api/search?q=${encodeURIComponent(q)}&limit=30`); state.searchCache.set(q, items); }
+    let items = state.searchCache.get(`${start}+${q}`);
+    if (!items) { items = await api(`/api/search?q=${encodeURIComponent(q)}&limit=30&start=${start}`); state.searchCache.set(`${start}+${q}`, items); }
     if (!box.isConnected || seq !== searchSeq) return; // экран сменился или пришёл более новый запрос
-    state.viewItems = items;
-    box.innerHTML = rowsHTML(items);
+    state.viewItems = append ? [...state.viewItems, ...items] : items;
+    box.innerHTML = rowsHTML(state.viewItems);
     markPlaying();
+    if (items.length >= 30) {
+      const btn = document.createElement('button');
+      btn.className = 'chip';
+      btn.style.margin = '16px 0';
+      btn.textContent = t('more');
+      btn.onclick = () => { btn.remove(); doSearch(q, { start: start + 30, append: true }); };
+      box.appendChild(btn);
+    }
   } catch (e) { if (box.isConnected && seq === searchSeq) box.innerHTML = `<div class="error-box">${t('search_failed', { e: esc(e.message) })}</div>`; }
 }
 
@@ -833,12 +841,24 @@ async function renderSubs() {
 async function renderBrowse(url, title) {
   const gen = routeGen;
   shell(title || t('list_h'), t('list_sub'), `<div id="results"><div class="loading">${t('loading')}</div></div>`);
-  try {
-    const items = await api(`/api/browse?url=${encodeURIComponent(url)}&limit=60`);
+  let start = 1;
+  const loadMore = async (append) => {
+    const items = await api(`/api/browse?url=${encodeURIComponent(url)}&limit=60&start=${start}`);
     if (gen !== routeGen) return;
-    state.viewItems = items;
-    $('#results').innerHTML = rowsHTML(items, { channelFromTitle: title });
+    state.viewItems = append ? [...state.viewItems, ...items] : items;
+    $('#results').innerHTML = rowsHTML(state.viewItems, { channelFromTitle: title });
     markPlaying();
+    if (items.length >= 60) {
+      const btn = document.createElement('button');
+      btn.className = 'chip';
+      btn.style.margin = '16px 0';
+      btn.textContent = t('more');
+      btn.onclick = () => { btn.remove(); start += 60; loadMore(true); };
+      $('#results').appendChild(btn);
+    }
+  };
+  try {
+    await loadMore(false);
   } catch (e) { if (gen === routeGen) $('#results').innerHTML = `<div class="error-box">${esc(e.message)}</div>`; }
 }
 

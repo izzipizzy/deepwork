@@ -256,7 +256,8 @@ const server = http.createServer(async (req, res) => {
       const q = (u.searchParams.get('q') || '').trim();
       if (!q) return json(res, 200, []);
       const limit = Math.min(Math.max(1, Math.floor(Number(u.searchParams.get('limit'))) || 30), 50);
-      return json(res, 200, await yt.search(q, limit));
+      const start = Math.max(1, Math.floor(Number(u.searchParams.get('start'))) || 1);
+      return json(res, 200, await yt.search(q, limit, start));
     }
 
     // --- плоский список (открыть канал/плейлист)
@@ -265,7 +266,9 @@ const server = http.createServer(async (req, res) => {
       let host = 'www.youtube.com';
       try { host = new URL(url).hostname; } catch { return fail(res, 400, 'bad url'); }
       if (!/(^|\.)youtube\.com$/.test(host) && host !== 'youtu.be') return fail(res, 400, lang === 'ru' ? 'только YouTube' : 'YouTube links only');
-      return json(res, 200, await yt.listFlat(url, Math.min(Math.max(1, Math.floor(Number(u.searchParams.get('limit'))) || 60), 100)));
+      const limit = Math.min(Math.max(1, Math.floor(Number(u.searchParams.get('limit'))) || 60), 100);
+      const start = Math.max(1, Math.floor(Number(u.searchParams.get('start'))) || 1);
+      return json(res, 200, await yt.listFlat(url, limit, start));
     }
 
     // --- метаданные + выбор формата
