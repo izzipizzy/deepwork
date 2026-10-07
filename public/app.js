@@ -686,7 +686,8 @@ function renderSearch() {
   view.innerHTML = `
     <div class="search-box"><input id="q" placeholder="${esc(t('q_ph'))}" autofocus autocomplete="off"></div>
     <div class="quick-chips">${['deep house mix', 'minimal techno mix', 'dub techno mix', 'melodic techno set'].map((q) => `<button class="chip" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>
-    <div id="results"><div class="empty">${t('search_hint')}</div></div>`;
+    <div id="results"><div class="empty">${t('search_hint')}</div></div>
+    <div id="more-row" class="more-row"></div>`;
   const input = $('#q');
   let tmr = 0;
   const go = () => { const q = input.value.trim(); if (q) doSearch(q); };
@@ -720,13 +721,16 @@ async function doSearch(q, { start = 1, append = false } = {}) {
     markPlaying();
     if (items.length >= 30) {
       moreLoader = () => doSearch(q, { start: start + 30, append: true });
-      const btn = document.createElement('button');
-      btn.className = 'chip';
-      btn.style.margin = '16px 0';
-      btn.textContent = t('more');
-      btn.onclick = () => { btn.remove(); if (moreLoader) { const f = moreLoader; moreLoader = null; f(); } };
-      box.appendChild(btn);
-    } else moreLoader = null;
+      const mr = $('#more-row');
+      if (mr) {
+        mr.innerHTML = '';
+        const btn = document.createElement('button');
+        btn.className = 'chip';
+        btn.textContent = t('more');
+        btn.onclick = () => { mr.innerHTML = `<span class="loading">${t('loading')}</span>`; if (moreLoader) { const f = moreLoader; moreLoader = null; f(); } };
+        mr.appendChild(btn);
+      }
+    } else { moreLoader = null; const mr = $('#more-row'); if (mr) mr.innerHTML = ''; }
   } catch (e) { if (box.isConnected && seq === searchSeq) box.innerHTML = `<div class="error-box">${t('search_failed', { e: esc(e.message) })}</div>`; }
 }
 
@@ -747,7 +751,8 @@ function renderGenre(id) {
     <a class="back-link" href="#/genres">${t('back_genres')}</a>
     <h1>${esc(g.name)}</h1><div class="h-sub">${esc(t(g.d))}</div>
     <div class="quick-chips">${g.queries.map((q, i) => `<button class="chip ${i === 0 ? 'on' : ''}" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>
-    <div id="results"><div class="loading">ищу…</div></div>`;
+    <div id="results"><div class="loading">${t('loading')}</div></div>
+    <div id="more-row" class="more-row"></div>`;
   const run = async (q) => {
     view.querySelectorAll('[data-q]').forEach((c) => c.classList.toggle('on', c.dataset.q === q));
     await doSearch(q);
@@ -852,7 +857,7 @@ async function renderSubs() {
 // --- просмотр канала/плейлиста
 async function renderBrowse(url, title) {
   const gen = routeGen;
-  shell(title || t('list_h'), t('list_sub'), `<div id="results"><div class="loading">${t('loading')}</div></div>`);
+  shell(title || t('list_h'), t('list_sub'), `<div id="results"><div class="loading">${t('loading')}</div></div><div id="more-row" class="more-row"></div>`);
   let start = 1;
   const loadMore = async (append) => {
     const items = await api(`/api/browse?url=${encodeURIComponent(url)}&limit=60&start=${start}`);
@@ -862,13 +867,16 @@ async function renderBrowse(url, title) {
     markPlaying();
     if (items.length >= 60) {
       moreLoader = () => { start += 60; loadMore(true); };
-      const btn = document.createElement('button');
-      btn.className = 'chip';
-      btn.style.margin = '16px 0';
-      btn.textContent = t('more');
-      btn.onclick = () => { btn.remove(); if (moreLoader) { const f = moreLoader; moreLoader = null; f(); } };
-      $('#results').appendChild(btn);
-    } else moreLoader = null;
+      const mr = $('#more-row');
+      if (mr) {
+        mr.innerHTML = '';
+        const btn = document.createElement('button');
+        btn.className = 'chip';
+        btn.textContent = t('more');
+        btn.onclick = () => { mr.innerHTML = `<span class="loading">${t('loading')}</span>`; if (moreLoader) { const f = moreLoader; moreLoader = null; f(); } };
+        mr.appendChild(btn);
+      }
+    } else { moreLoader = null; const mr = $('#more-row'); if (mr) mr.innerHTML = ''; }
   };
   try {
     await loadMore(false);
